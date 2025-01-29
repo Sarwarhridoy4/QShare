@@ -1,7 +1,7 @@
-# FileShare - A PyQt6-Based Local File Sharing Application
+# QShare - A PyQt6-Based Local File Sharing Application
 
 ## Overview
-FileShare is a Python-based file-sharing application built using **PyQt6** for GUI and **sockets** for network communication. It enables seamless peer-to-peer file transfer over a local network using TCP sockets and a UDP-based broadcasting mechanism for device discovery.
+QShare is a Python-based file-sharing application built using **PyQt6** for GUI and **sockets** for network communication. It enables seamless peer-to-peer file transfer over a local network using TCP sockets and a UDP-based broadcasting mechanism for device discovery.
 
 ## Features
 - **Peer-to-Peer File Transfer**: Send and receive files over the local network.
@@ -35,12 +35,12 @@ pip install PyQt6
    ```
 2. **Select Files**: Click the `Select Files` button to choose files for transfer.
 3. **Discover Devices**: Available devices will be listed automatically.
-4. **Send Files**: Select a device and click `Send Files` to initiate transfer.
+4. **Send Files**: Select a device and click `Send Files` to initiate a transfer.
 5. **Receive Files**: A confirmation prompt will appear when an incoming file is detected.
 
 ## Network Details
 - **TCP Server**: Listens for incoming file transfer requests.
-- **UDP Broadcast**: Used for discovering active servers on the local network.
+- **UDP Broadcast**: Used to discover active servers on the local network.
 - **Port Configuration**:
   - **Broadcast Port**: `5002`
   - **TCP File Transfer**: Dynamically assigned at runtime
@@ -53,7 +53,7 @@ To test the application on a single device:
 
 ## Hosting the Application
 ### Local Network Usage
-This application is designed for LAN usage. For hosting over the internet, consider:
+This application is designed for LAN usage. For hosting over the Internet, consider:
 - Using a **cloud VPS** (e.g., AWS, DigitalOcean) with port forwarding.
 - Implementing **WebSockets** or a **Flask/Django API** for better compatibility with online hosting platforms.
 - Deploying the frontend separately via **Heroku, Replit, or Vercel**.
@@ -67,7 +67,7 @@ This application is designed for LAN usage. For hosting over the internet, consi
 This project is licensed under the MIT License. Feel free to modify and distribute it.
 
 ## Author
-Developed by [Your Name].
+Developed by [Sarwar Hossain].
 
 ## Contributions
 Pull requests are welcome! If you'd like to contribute, please submit an issue or fork the repository.
