@@ -8,14 +8,13 @@ from PyQt6.QtWidgets import (
     QListWidget, QProgressBar, QLabel, QMessageBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, QMetaObject, pyqtSlot, Q_ARG
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QPixmap, QIcon, QFontDatabase
 
 # Server Configuration
 HOST = "0.0.0.0"
 BUFFER_SIZE = 4096
 BROADCAST_PORT = 5002
 BROADCAST_INTERVAL = 2  # Seconds
-
 
 class FileSharingServer(QThread):
     incoming_file = pyqtSignal(str, str, object)  # filename, ip, handler
@@ -38,7 +37,6 @@ class FileSharingServer(QThread):
             handler = ClientHandler(client_socket, self.save_path)
             handler.incoming_file.connect(self.incoming_file)
             handler.start()
-
 
 class ClientHandler(QThread):
     incoming_file = pyqtSignal(str, str, object)  # filename, ip, handler
@@ -83,7 +81,6 @@ class ClientHandler(QThread):
         self.response = response
         self.quit()
 
-
 class ServerBroadcaster(QThread):
     def __init__(self, port):
         super().__init__()
@@ -99,7 +96,6 @@ class ServerBroadcaster(QThread):
                 time.sleep(BROADCAST_INTERVAL)
             except Exception as e:
                 print(f"Broadcast error: {e}")
-
 
 class ClientDiscoveryListener(QThread):
     device_discovered = pyqtSignal(str, int)  # ip, port
@@ -124,7 +120,6 @@ class ClientDiscoveryListener(QThread):
             except Exception as e:
                 print(f"Discovery error: {e}")
 
-
 class FileSenderThread(QThread):
     progress_updated = pyqtSignal(int)
     finished = pyqtSignal(bool, str)  # success, message
@@ -138,7 +133,13 @@ class FileSenderThread(QThread):
     def run(self):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.connect((self.ip, self.port))
+                sock.settimeout(5)  # Add timeout
+                try:
+                    sock.connect((self.ip, self.port))
+                except (ConnectionRefusedError, socket.timeout):
+                    self.finished.emit(False, "Connection failed. Device might be offline.")
+                    return
+
                 filename = os.path.basename(self.file_path)
                 sock.send(filename.encode())
 
@@ -161,7 +162,6 @@ class FileSenderThread(QThread):
         except Exception as e:
             self.finished.emit(False, f"Error: {str(e)}")
 
-
 class FileSharingClient(QWidget):
     def __init__(self):
         super().__init__()
@@ -172,8 +172,20 @@ class FileSharingClient(QWidget):
         self.init_network()
 
     def init_ui(self):
-        self.setWindowTitle("FileShare")
+        self.setWindowTitle("QShare")
         self.setGeometry(100, 100, 500, 500)
+        
+        # Get base directory for resources
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Set window icon
+        icon_path = os.path.join(base_dir, "res", "app_icon.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+        else:
+            print(f"Icon not found at: {icon_path}")
+
+        # Set application style
         self.setStyleSheet("""
             QWidget { background-color: #2E3440; color: #D8DEE9; }
             QPushButton { 
@@ -199,6 +211,18 @@ class FileSharingClient(QWidget):
         """)
 
         layout = QVBoxLayout()
+
+        # Logo
+        self.logo_label = QLabel(self)
+        logo_path = os.path.join(base_dir, "res", "app_logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            self.logo_label.setPixmap(pixmap.scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio))
+        else:
+            print(f"Logo not found at: {logo_path}")
+            self.logo_label.setText("QShare Logo")
+        self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.logo_label)
 
         self.device_list = QListWidget()
         self.device_list.itemClicked.connect(self.select_device)
@@ -248,6 +272,13 @@ class FileSharingClient(QWidget):
         handler.set_response(response == QMessageBox.StandardButton.Yes)
 
     def update_devices(self, ip, port):
+        # Get local IP address
+        local_ip = socket.gethostbyname(socket.gethostname())
+        
+        # Check if the discovered device is self
+        if ip == local_ip and port == self.server.port:
+            return  # Skip adding self to device list
+        
         device_id = f"{ip}:{port}"
         if device_id not in self.discovered_devices:
             self.discovered_devices.add(device_id)
@@ -269,9 +300,19 @@ class FileSharingClient(QWidget):
             QMessageBox.warning(self, "Error", "Please select a device first!")
             return
 
-        ip, port = self.selected_device.split(':')
-        port = int(port)
+        # Get local IP and port
+        local_ip = socket.gethostbyname(socket.gethostname())
+        local_port = self.server.port
 
+        # Check if selected device is self
+        selected_ip, selected_port = self.selected_device.split(':')
+        if selected_ip == local_ip and int(selected_port) == local_port:
+            QMessageBox.warning(self, "Error", "Cannot send files to yourself! Please select another device.")
+            return
+
+        # Proceed with file transfer
+        ip, port = selected_ip, int(selected_port)
+        
         for i in range(self.file_list.count()):
             item = self.file_list.item(i)
             file_path = item.text()
@@ -287,9 +328,22 @@ class FileSharingClient(QWidget):
             QMessageBox.critical(self, "Error", msg)
         self.progress_bar.setValue(0)
 
+def load_font(app):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(base_dir, "res", "Roboto-Regular.ttf")
+    
+    if os.path.exists(font_path):
+        font_id = QFontDatabase.addApplicationFont(font_path)
+        if font_id != -1:
+            font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+            app.setFont(QFont(font_family))
+            return
+    print("Using system default font")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    load_font(app)
+    
     client = FileSharingClient()
     client.show()
     app.exec()
