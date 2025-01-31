@@ -1,14 +1,13 @@
 import sys
 import os
 import socket
-import threading
 import time
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog,
     QListWidget, QProgressBar, QLabel, QMessageBox, QHBoxLayout, QSpacerItem,
     QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QThread, QMetaObject, pyqtSlot, Q_ARG, QSettings
+from PyQt6.QtCore import Qt, pyqtSignal, QThread, pyqtSlot, QSettings
 from PyQt6.QtGui import QFont, QPixmap, QIcon, QFontDatabase, QCloseEvent
 from PyQt6.QtWidgets import QComboBox
 
@@ -555,7 +554,7 @@ class FileSharingClient(QWidget):
 
 def load_font(app):
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(base_dir, "res", "Roboto-Regular.ttf")
+    font_path = os.path.join(base_dir, "res", "Roboto-Black.ttf")
     
     if os.path.exists(font_path):
         font_id = QFontDatabase.addApplicationFont(font_path)
