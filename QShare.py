@@ -23,7 +23,8 @@ class FileSharingClient(QWidget):
         self.discovered_devices = dict()
         self.selected_device = None
         self.local_ip = self.get_local_ip()
-        self.current_theme = "dark"  # Default theme
+        self.current_theme = "dark"  # Initialize current_theme here
+        self.sender_threads = []  # Add this line to track sender threads
         self.init_ui()
         self.init_server()
         self.init_network()
@@ -212,13 +213,16 @@ class FileSenderThread(QThread):
 class FileSharingClient(QWidget):
     def __init__(self):
         super().__init__()
-        self.discovered_devices = dict()  # {device_id: (ip, port, last_seen)}
+        self.discovered_devices = dict()
         self.selected_device = None
         self.local_ip = self.get_local_ip()
+        self.current_theme = "dark"  # Initialize current_theme here
+        self.sender_threads = []  # Add this line to track sender threads
         self.init_ui()
         self.init_server()
         self.init_network()
         self.active_transfers = 0
+        self.load_settings()
 
     def init_ui(self):
         self.setWindowTitle("QShare")
@@ -240,8 +244,8 @@ class FileSharingClient(QWidget):
             QPushButton {
                 background-color: #2D2D2D;
                 border: 1px solid #3D3D3D;
-                padding: 12px;
-                border-radius: 4px;
+                padding: 12px 20px;  # Add padding for better looks
+                border-radius: 8px;  # Create rounded corners
                 min-width: 120px;
             }
             QPushButton:hover {
@@ -517,6 +521,8 @@ class FileSharingClient(QWidget):
             thread = FileSenderThread(file_path, ip, port)
             thread.progress_updated.connect(self.progress_bar.setValue)
             thread.finished.connect(self.handle_transfer_complete)
+            thread.finished.connect(lambda thread=thread: self.cleanup_thread(thread))  # Add cleanup
+            self.sender_threads.append(thread)  # Keep track of thread
             thread.start()
 
     def handle_transfer_complete(self, success, msg):
@@ -539,6 +545,11 @@ class FileSharingClient(QWidget):
     def show_error(self, message):
         QMessageBox.critical(self, "Error", message)
 
+    def cleanup_thread(self, thread):
+        if thread in self.sender_threads:
+            self.sender_threads.remove(thread)
+            thread.deleteLater()
+
     def closeEvent(self, event: QCloseEvent):
         # Gracefully stop all network components
         self.server.stop()
@@ -550,6 +561,12 @@ class FileSharingClient(QWidget):
         self.broadcaster.wait(2000)
         self.discovery_listener.wait(2000)
         
+        # Wait for any active file transfers
+        for thread in self.sender_threads:
+            thread.wait(2000)  # Wait up to 2 seconds for each thread
+        
+        # Save settings and accept close event
+        self.save_settings()
         event.accept()
 
 def load_font(app):
