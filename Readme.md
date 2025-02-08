@@ -56,6 +56,24 @@ The `requirements.txt` file includes:
 4. **Send Files**: Select a device and click `Send Files` to initiate a transfer.
 5. **Receive Files**: A confirmation prompt will appear when an incoming file is detected.
 
+### Creating an Executable with PyInstaller
+
+To create an executable for QShare using PyInstaller, follow these steps:
+
+1. **Install PyInstaller**: Ensure PyInstaller is installed in your Python environment.
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. **Generate the Executable**: Use the provided `QShare.spec` file to create the executable.
+   ```bash
+   pyinstaller QShare.spec
+   ```
+
+3. **Locate the Executable**: After the build process completes, the executable will be located in the `dist` directory.
+
+4. **Run the Executable**: Navigate to the `dist` directory and run the `QShare` executable to start the application.
+
 ## Network Details
 
 - **TCP Server**: Listens for incoming file transfer requests.
@@ -94,7 +112,7 @@ This project is licensed under the MIT License. Feel free to modify and distribu
 
 ## Author
 
-Developed by [Sarwar Hossain].
+Developed by [Sarwar Hossain](https://github.com/Sarwarhridoy4).
 
 ## Contributions
 
