@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication
-from qshare.ui.main_window import FileSharingClient
-from qshare.utils.helpers import load_font
+from ui.main_window import FileSharingClient
+from utils.helpers import load_font
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
